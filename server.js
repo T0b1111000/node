@@ -92,6 +92,15 @@ router.route('/bears/:bear_id')
 		});
 	})
 
+
+// ...
+var port = process.env.PORT || 8080;
+// Ajout Hello World
+app.get('/', function(req, res) {
+ res.json({ 'Hello World!' });
+});
+// DATABASE SETUP
+// ...
 	// update the bear with this id
 	.put(function(req, res) {
 		Bear.findById(req.params.bear_id, function(err, bear) {
