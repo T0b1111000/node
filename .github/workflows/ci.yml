@@ -1,0 +1,52 @@
+name: CI/CD Pipeline Node.js + Docker
+
+# Déclencheurs : push/PR sur main/develop
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Job 1: Tests CI (checkout, Node 18, npm, test, lint)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4  # Étape 1 [file:1]
+
+    - name: Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'  # Étape 2 [file:1]
+
+    - name: Install dependencies
+      run: npm ci  # npm install + lockfile [file:1]
+
+    - name: Run tests
+      run: npm test  # Étape 4 (crée tests si absents) [file:1]
+
+    - name: Lint code
+      run: npm run lint  # Étape 5 (installe eslint) [file:1]
+
+  # Job 2: Build/Push Docker (SEULEMENT sur main)
+  docker:
+    needs: test  # Attend tests OK
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'  # Contrainte branche main [file:1]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERUSERNAME }}  # Secret GitHub [file:1]
+        password: ${{ secrets.DOCKERPASSWORD }}
+
+    - name: Build & Push Docker image
+      run: |
+        docker build -t ${{ secrets.DOCKERUSERNAME }}/examen-node:latest .
+        docker push ${{ secrets.DOCKERUSERNAME }}/examen-node:latest  # Registry DockerHub [file:1][file:4]
